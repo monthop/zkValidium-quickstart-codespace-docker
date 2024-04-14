@@ -111,6 +111,8 @@ services:
           memory: 2G
         reservations:
           memory: 1G
+    ports:
+      - 5432:5432
     volumes:
       - ./config/node/db_scripts/init_prover_db.sql:/docker-entrypoint-initdb.d/init.sql
       - zkevm_state_db_data:/var/lib/postgresql/data
@@ -132,6 +134,8 @@ services:
           memory: 2G
         reservations:
           memory: 1G
+    ports:
+      - 5433:5432
     volumes:
       - zkevm_pool_db_data:/var/lib/postgresql/data
     environment:
@@ -152,6 +156,8 @@ services:
           memory: 2G
         reservations:
           memory: 1G
+    ports:
+      - 5435:5432
     volumes:
       - ./config/node/db_scripts/init_event_db.sql:/docker-entrypoint-initdb.d/init.sql
       - zkevm_event_db_data:/var/lib/postgresql/data
@@ -187,6 +193,8 @@ services:
   explorer-backend-l1-db:
     container_name: explorer-backend-l1-db
     image: postgres:15
+    ports:
+      - 5436:5432
     environment:
       - POSTGRES_USER=l1_explorer_user
       - POSTGRES_PASSWORD=l1_explorer_password
@@ -221,14 +229,13 @@ services:
       service: explorer-frontend
     container_name: 'explorer-frontend-l1'
     environment:
-      #- NEXT_PUBLIC_API_PORT=81
-      - NEXT_PUBLIC_API_HOST=${COMMON_HOST}-81${COMMON_HOST_POST}
+      - NEXT_PUBLIC_API_PORT=81
       - NEXT_PUBLIC_NETWORK_NAME=Local Ethereum
       - NEXT_PUBLIC_NETWORK_SHORT_NAME=Local Ethereum
       - NEXT_PUBLIC_NETWORK_ID=1337
-      - NEXT_PUBLIC_NETWORK_RPC_URL=https://${COMMON_HOST}-8545${COMMON_HOST_POST}
+      - NEXT_PUBLIC_NETWORK_RPC_URL=http://${COMMON_HOST}:8545
       - NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${EXPLORER_WALLET_CONNECT_PROJECT_ID}
-      - NEXT_PUBLIC_STATS_API_HOST=https://${COMMON_HOST}-8082${COMMON_HOST_POST}
+      - NEXT_PUBLIC_STATS_API_HOST=http://${COMMON_HOST}:8082
     ports:
       - 3000:3000
 
@@ -239,6 +246,8 @@ services:
       file: ./services/docker-compose-explorer-stats.yml
       service: explorer-stats-db
     container_name: 'explorer-stats-db-l1'
+    ports:
+      - 7433:5432
     volumes:
       - explorer_l1_stats_db_data:/var/lib/postgresql/data
 
@@ -265,13 +274,13 @@ services:
       service: explorer-proxy
     container_name: 'explorer-proxy-l1'
     environment:
-      PROXIED_FRONT_URL: https://${COMMON_HOST}-81${COMMON_HOST_POST}
+      PROXIED_FRONT_URL: http://${COMMON_HOST}:81
       BACK_PROXY_PASS: http://explorer-backend-l1:4000
       FRONT_PROXY_PASS: http://explorer-frontend-l1:3000
       STATS_PROXY_PASS: http://explorer-stats-l1:8050/
     ports:
       - 81:80
-      - 8082:8080      
+      - 8082:8080
 
   explorer-visualizer-proxy:
     extends:
@@ -279,10 +288,10 @@ services:
       service: visualizer-proxy
     container_name: 'visualizer-proxy'
     environment:
-      PROXIED_FRONT_URL: https://${COMMON_HOST}-80${COMMON_HOST_POST}
+      PROXIED_FRONT_URL: http://${COMMON_HOST}
       FRONT_PROXY_PASS: http://explorer-visualizer:8050/
     ports:
-      - 8083:8081      
+      - 8083:8081
 
   explorer-backend-l2:
     extends:
@@ -324,6 +333,8 @@ services:
   explorer-backend-l2-db:
     container_name: explorer-backend-l2-db
     image: postgres:15
+    ports:
+      - 5437:5432
     environment:
       - POSTGRES_USER=l2_explorer_user
       - POSTGRES_PASSWORD=l2_explorer_password
@@ -341,18 +352,17 @@ services:
     container_name: 'explorer-frontend-l2'
     environment:
       - NEXT_PUBLIC_APP_PORT=3001
-      - NEXT_PUBLIC_API_HOST=${COMMON_HOST}-80${COMMON_HOST_POST}
       - NEXT_PUBLIC_NETWORK_NAME=zkEVM
       - NEXT_PUBLIC_NETWORK_SHORT_NAME=zkEVM
       - NEXT_PUBLIC_NETWORK_ID=1001
-      - NEXT_PUBLIC_NETWORK_RPC_URL=https://${COMMON_HOST}-8123${COMMON_HOST_POST}
+      - NEXT_PUBLIC_NETWORK_RPC_URL=http://${COMMON_HOST}:8123
       - NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${EXPLORER_WALLET_CONNECT_PROJECT_ID}
       # TODO: should not use the main branch
       - NEXT_PUBLIC_NETWORK_LOGO=https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-logos/polygon.svg
       - NEXT_PUBLIC_NETWORK_ICON=https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-icons/polygon-short.svg
       - NEXT_PUBLIC_HOMEPAGE_PLATE_BACKGROUND=linear-gradient(122deg, rgba(162, 41, 197, 1) 0%, rgba(123, 63, 228, 1) 100%)
       - NEXT_PUBLIC_HOMEPAGE_PLATE_TEXT_COLOR=rgba(255, 255, 255, 1)
-      - NEXT_PUBLIC_STATS_API_HOST=https://${COMMON_HOST}-8084${COMMON_HOST_POST}
+      - NEXT_PUBLIC_STATS_API_HOST=http://${COMMON_HOST}:8084
     ports:
       - 3001:3000
 
@@ -363,6 +373,8 @@ services:
       file: ./services/docker-compose-explorer-stats.yml
       service: explorer-stats-db
     container_name: 'explorer-stats-db-l2'
+    ports:
+      - 7434:5432
     volumes:
       - explorer_l2_stats_db_data:/var/lib/postgresql/data
 
@@ -389,7 +401,7 @@ services:
       service: explorer-proxy
     container_name: 'explorer-proxy-l2'
     environment:
-      PROXIED_FRONT_URL: https://${COMMON_HOST}-80${COMMON_HOST_POST}
+      PROXIED_FRONT_URL: http://${COMMON_HOST}
       BACK_PROXY_PASS: http://explorer-backend-l2:4000
       FRONT_PROXY_PASS: http://explorer-frontend-l2:3000
       STATS_PROXY_PASS: http://explorer-stats-l2:8050/
@@ -488,6 +500,10 @@ services:
           memory: 2G
         reservations:
           memory: 1G
+    expose:
+      - 5438
+    ports:
+      - 5438:5432
     volumes:
       - zkevm_bridge_db_data:/var/lib/postgresql/data
     environment:
@@ -525,17 +541,17 @@ services:
     depends_on:
       - zkevm-bridge-service
     environment:
-      - ETHEREUM_RPC_URL=https://${COMMON_HOST}-8545${COMMON_HOST_POST}
+      - ETHEREUM_RPC_URL=http://${COMMON_HOST}:8545
       - ETHEREUM_EXPLORER_URL=${L1_EXPLORER_URL}
       - ETHEREUM_BRIDGE_CONTRACT_ADDRESS=0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E
       - ETHEREUM_FORCE_UPDATE_GLOBAL_EXIT_ROOT=true
       - ETHEREUM_PROOF_OF_EFFICIENCY_CONTRACT_ADDRESS=0x1F708C24a0D3A740cD47cC0444E9480899f3dA7D
       - ETHEREUM_ROLLUP_MANAGER_ADDRESS=0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0
-      - POLYGON_ZK_EVM_RPC_URL=https://${COMMON_HOST}-8123${COMMON_HOST_POST}
-      - POLYGON_ZK_EVM_EXPLORER_URL=https://${COMMON_HOST}-80${COMMON_HOST_POST}
+      - POLYGON_ZK_EVM_RPC_URL=http://${COMMON_HOST}:8123
+      - POLYGON_ZK_EVM_EXPLORER_URL=http://${COMMON_HOST}:80
       - POLYGON_ZK_EVM_BRIDGE_CONTRACT_ADDRESS=0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E
       - POLYGON_ZK_EVM_NETWORK_ID=1
-      - BRIDGE_API_URL=https://${COMMON_HOST}-8080${COMMON_HOST_POST}
+      - BRIDGE_API_URL=http://${COMMON_HOST}:8080
       - ENABLE_FIAT_EXCHANGE_RATES=false
       - ENABLE_OUTDATED_NETWORK_MODAL=false
       - ENABLE_DEPOSIT_WARNING=true
@@ -585,6 +601,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - 5444:5432
     volumes:
       - zkevm_dac_node_db_data:/var/lib/postgresql/data
     environment:
